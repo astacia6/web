@@ -3,27 +3,28 @@ import folium
 from streamlit_folium import st_folium
 import requests
 
+# 페이지 설정
 st.set_page_config(page_title="🇪🇸 스페인 여행 가이드 (Fun Edition)", layout="wide")
 
 # --- 사이드바 ---
 st.sidebar.title("여행지 선택")
 cities = ["전체 보기", "바르셀로나", "마드리드", "세비야", "그라나다"]
-choice = st.sidebar.selectbox("도가니 중 하나를 골라보세요!", cities)
+choice = st.sidebar.selectbox("여행지를 골라보세요!", cities)
 
 st.sidebar.markdown("---")
-if st.sidebar.button("스페인 퀴즈!"):
-    st.sidebar.success("스페인 국기는 🇪🇸? 아니면 🇪🇺?")
-    # 실제 퀴즈 로직은 여기다 추가 가능
+if st.sidebar.button("🎯 스페인 퀴즈 풀기!"):
+    st.sidebar.success("문제: 스페인의 수도는 마드리드일까요? 🤔")
 
-# --- Lottie 애니메이션 (지도 배경 장식용) ---
-@st.experimental_memo
+# --- Lottie 애니메이션 로딩 함수 ---
+@st.cache_data
 def load_lottieurl(url: str):
     r = requests.get(url)
     if r.status_code == 200:
         return r.json()
     return {}
 
-lottie_map = load_lottieurl("https://assets5.lottiefiles.com/packages/lf20_tfb3estd.json")
+from streamlit_lottie import st_lottie
+lottie_map = load_lottieurl("https://assets10.lottiefiles.com/packages/lf20_qp1q7mct.json")
 
 # --- 여행지 데이터 ---
 travel_destinations = {
@@ -31,36 +32,36 @@ travel_destinations = {
         "loc": (41.3851, 2.1734),
         "img": "https://source.unsplash.com/featured/?barcelona",
         "desc": [
-            "🎨 **사그라다 파밀리아**: 가우디의 걸작, 매년 수백만 명 방문",
-            "🏰 **고딕 지구**: 중세 골목길을 걸어보세요",
-            "🛍️ **람블라스 거리**: 거리 공연과 시장이 활기차요"
+            "🎨 **사그라다 파밀리아**: 가우디의 걸작 성당",
+            "🏰 **고딕 지구**: 중세 분위기의 골목 산책",
+            "🛍️ **람블라스 거리**: 활기 넘치는 쇼핑 거리"
         ]
     },
     "마드리드": {
         "loc": (40.4168, -3.7038),
         "img": "https://source.unsplash.com/featured/?madrid",
         "desc": [
-            "🖼️ **프라도 미술관**: 고전 명화가 가득",
-            "🏰 **왕궁(Palacio Real)**: 호화로운 왕실 건축",
-            "🌳 **레티로 공원**: 보트 타기와 해먹 체험"
+            "🖼️ **프라도 미술관**: 고전 예술의 성지",
+            "🏰 **왕궁**: 유럽 최대 규모의 궁전",
+            "🌳 **레티로 공원**: 현지인과 함께 여유를"
         ]
     },
     "세비야": {
         "loc": (37.3886, -5.9823),
         "img": "https://source.unsplash.com/featured/?seville",
         "desc": [
-            "⛪ **세비야 대성당**: 히랄다 탑에서 전망 감상",
-            "🏰 **알카사르 궁전**: 무데하르 양식의 걸작",
-            "💃 **플라멩코 공연**: 열정적인 춤을 눈앞에서"
+            "⛪ **세비야 대성당**: 거대한 고딕 양식 성당",
+            "🏰 **알카사르 궁전**: 중세 이슬람-기독교 혼합양식",
+            "💃 **플라멩코 공연**: 열정의 무대!"
         ]
     },
     "그라나다": {
         "loc": (37.1773, -3.5986),
         "img": "https://source.unsplash.com/featured/?granada",
         "desc": [
-            "🌺 **알람브라 궁전**: 서쪽 이슬람 예술의 정수",
-            "🏘️ **알바이신 지구**: 매력적인 흰집 골목길",
-            "🎶 **사크로몬테 동굴**: 집시 플라멩코를 체험"
+            "🌺 **알람브라 궁전**: 이슬람 예술의 결정체",
+            "🏘️ **알바이신 지구**: 고즈넉한 언덕마을 산책",
+            "🎶 **사크로몬테**: 동굴 속 집시 공연"
         ]
     },
 }
@@ -73,59 +74,58 @@ def make_map(filtered_cities):
         folium.Marker(
             location=data["loc"],
             popup=f"<b>{city}</b>",
-            tooltip=city
+            tooltip=city,
+            icon=folium.Icon(color="red", icon="info-sign")
         ).add_to(m)
     return m
 
-# --- 본문 ---
+# --- 본문 콘텐츠 ---
 st.title("🎉 스페인 여행 가이드 (Fun Edition)")
-st.caption("사이드바에서 도시를 선택하거나 퀴즈를 눌러보세요!")
+st.caption("도시를 선택하면 사진, 설명, 지도, 퀴즈까지 즐길 수 있어요!")
 
-# 애니메이션 오버레이
-st_lottie = st.empty()
-st_lottie_l = st_lottie.lottie_component(lottie_map, height=200)
+# 애니메이션 표시
+with st.container():
+    st_lottie(lottie_map, height=200, key="map_anim")
 
 # 전체 보기
 if choice == "전체 보기":
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("📍 지도")
-        st_folium(make_map(travel_destinations.keys()), width=650, height=500)
-    with col2:
-        st.subheader("🏙️ 여행지 카드")
-        for city, data in travel_destinations.items():
-            st.image(data["img"], caption=city, use_column_width=True)
-            for line in data["desc"]:
-                st.write(f"- {line}")
-            st.markdown("---")
-else:
-    # 개별 도시 상세 탭
-    tabs = st.tabs(["정보", "사진", "지도", "퀴즈"])
-    data = travel_destinations[choice]
+    st.subheader("📍 여행지 지도 보기")
+    st_folium(make_map(travel_destinations.keys()), width=1000, height=500)
 
-    # 정보 탭
+    st.subheader("🏙️ 여행지 카드 보기")
+    for city, data in travel_destinations.items():
+        st.image(data["img"], caption=f"{city}의 풍경", use_column_width=True)
+        for line in data["desc"]:
+            st.write(f"- {line}")
+        st.markdown("---")
+
+else:
+    # 도시 개별 보기
+    data = travel_destinations[choice]
+    tabs = st.tabs(["ℹ️ 정보", "🖼️ 사진", "🗺️ 지도", "❓ 퀴즈"])
+
     with tabs[0]:
-        st.header(choice)
+        st.header(f"{choice} 여행지 정보")
         for d in data["desc"]:
-            st.write(d)
-        if st.button(f"{choice} 퀴즈 풀기"):
-            st.info(f"{choice} 관련 간단 퀴즈를 준비 중입니다 😉")
-    # 사진 탭
+            st.markdown(f"- {d}")
+
     with tabs[1]:
-        st.image(data["img"], use_column_width=True, caption=f"{choice}의 풍경")
-    # 지도 탭
+        st.image(data["img"], caption=f"{choice}의 풍경", use_column_width=True)
+
     with tabs[2]:
-        st_folium(make_map([choice]), width=800, height=500)
-    # 퀴즈 탭
+        st.subheader(f"{choice} 위치 지도")
+        st_folium(make_map([choice]), width=900, height=500)
+
     with tabs[3]:
-        st.markdown(f"### 🔍 {choice} 퀴즈")
-        q1 = st.radio("사그라다 파밀리아가 위치한 도시는?", ["마드리드", "바르셀로나", "세비야"])
+        st.subheader(f"{choice} 관련 퀴즈 🎯")
+        q = st.radio("📌 사그라다 파밀리아는 어느 도시에 있나요?", 
+                     ["세비야", "그라나다", "바르셀로나", "마드리드"])
         if st.button("정답 확인"):
-            if q1 == "바르셀로나":
-                st.success("정답입니다! 🎉")
+            if q == "바르셀로나":
+                st.success("🎉 정답입니다! 바르셀로나는 가우디의 도시예요.")
             else:
-                st.error("아쉽지만 다시 시도해보세요.")
+                st.error("🙅‍♂️ 오답입니다. 다시 생각해보세요!")
 
 # 푸터
 st.markdown("---")
-st.markdown("💡 원하시는 기능(맛집 추천, 교통 정보 등)이 있으면 사이드바에 요청해주세요!")
+st.caption("🧳 본 앱은 스트림릿 + 폴리움 + Lottie로 제작되었습니다.")
